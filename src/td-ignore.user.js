@@ -1,9 +1,14 @@
 // ==UserScript==
 // @name         TD Ignore
-// @namespace    td-ignore
-// @version      0.3.0
-// @description  Locally ignore selected posters on TigerDroppings.
+// @namespace    https://github.com/RoyalWe634/td-ignore
+// @version      0.3.1
+// @description  Locally ignore selected TigerDroppings posters by hiding their posts and topics they start.
 // @match        https://www.tigerdroppings.com/*
+// @license      MIT
+// @supportURL   https://github.com/RoyalWe634/td-ignore/issues
+// @compatible   edge
+// @compatible   brave
+// @compatible   firefox
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @run-at       document-idle
