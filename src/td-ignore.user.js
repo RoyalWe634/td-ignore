@@ -270,7 +270,9 @@
     }
 
     function refreshBoardThreads() {
-        const threads = document.querySelectorAll('div.index.indRow');
+        const threads = document.querySelectorAll(
+            'div.index.indRow, div.index.indRowAlt'
+        );
 
         threads.forEach(function (thread) {
             const starterLink = thread.querySelector(
