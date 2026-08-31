@@ -2,7 +2,7 @@
 
 TD Ignore is a browser userscript for TigerDroppings.com. It maintains a local ignore list, hides posts from selected users, and collapses board topics they start.
 
-Version 0.3.1 improves release metadata and documentation without changing the behavior validated in version 0.3.0.
+The current release is **version 0.3.1**.
 
 ## Features
 
@@ -15,11 +15,23 @@ Version 0.3.1 improves release metadata and documentation without changing the b
 - Provides **Unignore** to restore that user's posts and started topics.
 - Provides a fixed **TD Ignore** manager with an ignored-user count, individual **Unignore** controls, and **Unignore All** with confirmation.
 
+## Installation
+
+1. Install [Tampermonkey](https://www.tampermonkey.net/) for your browser.
+2. Open the [TD Ignore page on Greasy Fork](https://greasyfork.org/en/scripts/593685-td-ignore).
+3. Click **Install this script**.
+4. Confirm the installation in Tampermonkey.
+5. Visit or reload [TigerDroppings](https://www.tigerdroppings.com/).
+
+Users who prefer a manual installation can copy the repository's [`src/td-ignore.user.js`](src/td-ignore.user.js) into a new Tampermonkey userscript.
+
 ## Browser compatibility
 
-- Microsoft Edge + Tampermonkey: tested
-- Brave + Tampermonkey: tested
-- Mozilla Firefox + Tampermonkey: tested
+Tested with Tampermonkey on:
+
+- Microsoft Edge
+- Brave
+- Mozilla Firefox
 
 Edge and Brave are Chromium-based, while Firefox uses Gecko. Google Chrome is expected to work based on Chromium compatibility, but it has not been directly tested.
 
@@ -27,19 +39,6 @@ Edge and Brave are Chromium-based, while Firefox uses Gecko. Google Chrome is ex
 
 Ignored users are stored locally by the userscript manager. TD Ignore does not modify the user's TigerDroppings account or send the ignore list to TigerDroppings. It contains no analytics or tracking and makes no external network requests.
 
-## Installation
-
-TD Ignore is not yet published on Greasy Fork. To install it manually with Tampermonkey:
-
-1. Install Tampermonkey.
-2. Create a new userscript.
-3. Replace its sample contents with [`src/td-ignore.user.js`](src/td-ignore.user.js).
-4. Save it.
-5. Visit or reload TigerDroppings.
-
 ## Planned future direction
 
-Possible future improvements include:
-
-- Greasy Fork distribution.
-- A possible packaged browser extension later.
+A packaged browser extension may be considered later.
