@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TD Ignore
 // @namespace    td-ignore
-// @version      0.2.0
+// @version      0.3.0
 // @description  Locally ignore selected posters on TigerDroppings.
 // @match        https://www.tigerdroppings.com/*
 // @grant        GM_getValue
@@ -39,7 +39,7 @@
         };
 
         saveIgnoredUsers(ignoredUsers);
-        refreshPosts();
+        refreshPage();
         refreshIgnoreManager();
     }
 
@@ -49,7 +49,7 @@
         delete ignoredUsers[userId];
 
         saveIgnoredUsers(ignoredUsers);
-        refreshPosts();
+        refreshPage();
         refreshIgnoreManager();
     }
 
@@ -210,6 +210,97 @@
     }
 
     // -------------------------------------------------------------------------
+    // Collapse / restore board threads
+    // -------------------------------------------------------------------------
+
+    function collapseBoardThread(thread, user) {
+        thread.classList.add('td-ignore-thread-collapsed');
+
+        let placeholder = thread.querySelector(
+            '.td-ignore-thread-placeholder'
+        );
+
+        if (!placeholder) {
+            placeholder = document.createElement('div');
+            placeholder.className =
+                'td-ignore-placeholder td-ignore-thread-placeholder';
+
+            const message = document.createElement('span');
+            message.className = 'td-ignore-message';
+            message.textContent =
+                `IGNORED - Thread by ${user.username} hidden`;
+
+            const showButton = document.createElement('button');
+            showButton.type = 'button';
+            showButton.textContent = 'Show';
+
+            showButton.addEventListener('click', function () {
+                thread.classList.remove('td-ignore-thread-collapsed');
+                placeholder.style.display = 'none';
+            });
+
+            const unignoreButton = document.createElement('button');
+            unignoreButton.type = 'button';
+            unignoreButton.textContent = 'Unignore';
+
+            unignoreButton.addEventListener('click', function () {
+                unignoreUser(user.id);
+            });
+
+            placeholder.appendChild(message);
+            placeholder.appendChild(showButton);
+            placeholder.appendChild(unignoreButton);
+
+            thread.appendChild(placeholder);
+        }
+
+        placeholder.style.display = '';
+    }
+
+    function restoreBoardThread(thread) {
+        thread.classList.remove('td-ignore-thread-collapsed');
+
+        const placeholder = thread.querySelector(
+            '.td-ignore-thread-placeholder'
+        );
+
+        if (placeholder) {
+            placeholder.remove();
+        }
+    }
+
+    function refreshBoardThreads() {
+        const threads = document.querySelectorAll('div.index.indRow');
+
+        threads.forEach(function (thread) {
+            const starterLink = thread.querySelector(
+                '.author-ind a.author[href*="/users/prof.aspx?u="]'
+            );
+            const userId = getUserIdFromLink(starterLink);
+
+            if (!starterLink || !userId) {
+                return;
+            }
+
+            const user = {
+                id: userId,
+                username: starterLink.textContent.trim()
+            };
+
+            if (isIgnored(user.id)) {
+                collapseBoardThread(thread, user);
+            } else {
+                restoreBoardThread(thread);
+            }
+        });
+    }
+
+    function refreshPage() {
+        refreshPosts();
+        refreshBoardThreads();
+    }
+
+    // -------------------------------------------------------------------------
     // Ignored-user manager
     // -------------------------------------------------------------------------
 
@@ -300,7 +391,7 @@
         }
 
         saveIgnoredUsers({});
-        refreshPosts();
+        refreshPage();
         refreshIgnoreManager();
     }
 
@@ -403,6 +494,14 @@
                 display: flex !important;
             }
 
+            .td-ignore-thread-collapsed > * {
+                display: none !important;
+            }
+
+            .td-ignore-thread-collapsed > .td-ignore-thread-placeholder {
+                display: flex !important;
+            }
+
             .td-ignore-placeholder {
                 align-items: center;
                 gap: 10px;
@@ -413,6 +512,11 @@
                 border-left: 5px solid #ffc107;
                 border-top: 1px solid rgba(255, 193, 7, 0.35);
                 border-bottom: 1px solid rgba(255, 193, 7, 0.35);
+            }
+
+            .td-ignore-thread-placeholder {
+                width: 100%;
+                grid-column: 1 / -1;
             }
 
             .td-ignore-message {
@@ -552,6 +656,6 @@
 
     addStyles();
     addIgnoreManager();
-    refreshPosts();
+    refreshPage();
 
 })();
