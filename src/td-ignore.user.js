@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TD Ignore
 // @namespace    td-ignore
-// @version      0.1.2
+// @version      0.1.3
 // @description  Locally ignore selected posters on TigerDroppings.
 // @match        https://www.tigerdroppings.com/*
 // @grant        GM_getValue
@@ -55,6 +55,24 @@
     // TigerDroppings user identification
     // -------------------------------------------------------------------------
 
+    function getUserIdFromLink(userLink) {
+        if (!userLink) {
+            return null;
+        }
+
+        const match = userLink.href.match(/[?&]u=(\d+)/);
+
+        return match ? match[1] : null;
+    }
+
+    function getLoggedInUserId() {
+        const profileLink = document.querySelector(
+            '.menu-ava a[href*="/users/prof.aspx?u="]'
+        );
+
+        return getUserIdFromLink(profileLink);
+    }
+
     function getUserInfo(post) {
         const userLink = post.querySelector('.author a.RegUser');
 
@@ -63,15 +81,14 @@
         }
 
         const username = userLink.textContent.trim();
+        const userId = getUserIdFromLink(userLink);
 
-        const match = userLink.href.match(/[?&]u=(\d+)/);
-
-        if (!match) {
+        if (!userId) {
             return null;
         }
 
         return {
-            id: match[1],
+            id: userId,
             username: username,
             link: userLink
         };
@@ -81,10 +98,8 @@
     // Ignore button
     // -------------------------------------------------------------------------
 
-    function isOwnPost(post) {
-        return Boolean(
-            post.querySelector('a[href*="message.aspx"][href*="action=edit"]')
-        );
+    function isOwnPost(userId, loggedInUserId) {
+        return loggedInUserId !== null && userId === loggedInUserId;
     }
 
     function addIgnoreButton(post, user) {
@@ -168,6 +183,7 @@
     // -------------------------------------------------------------------------
 
     function refreshPosts() {
+        const loggedInUserId = getLoggedInUserId();
         const posts = document.querySelectorAll(
             '.maincont1.indRow, .maincont1.indRowAlt'
         );
@@ -179,7 +195,7 @@
                 return;
             }
 
-            if (!isOwnPost(post)) {
+            if (!isOwnPost(user.id, loggedInUserId)) {
                 addIgnoreButton(post, user);
             }
 
