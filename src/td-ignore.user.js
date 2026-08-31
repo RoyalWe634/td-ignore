@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TD Ignore
 // @namespace    td-ignore
-// @version      0.1.3
+// @version      0.2.0
 // @description  Locally ignore selected posters on TigerDroppings.
 // @match        https://www.tigerdroppings.com/*
 // @grant        GM_getValue
@@ -40,6 +40,7 @@
 
         saveIgnoredUsers(ignoredUsers);
         refreshPosts();
+        refreshIgnoreManager();
     }
 
     function unignoreUser(userId) {
@@ -49,6 +50,7 @@
 
         saveIgnoredUsers(ignoredUsers);
         refreshPosts();
+        refreshIgnoreManager();
     }
 
     // -------------------------------------------------------------------------
@@ -208,11 +210,172 @@
     }
 
     // -------------------------------------------------------------------------
+    // Ignored-user manager
+    // -------------------------------------------------------------------------
+
+    function refreshIgnoreManager() {
+        const ignoredUsers = getIgnoredUsers();
+        const ignoredEntries = Object.entries(ignoredUsers);
+        const managerButton = document.querySelector(
+            '.td-ignore-manager-button'
+        );
+
+        if (managerButton) {
+            managerButton.textContent = `TD Ignore (${ignoredEntries.length})`;
+        }
+
+        const list = document.querySelector('.td-ignore-manager-list');
+
+        if (!list) {
+            return;
+        }
+
+        list.replaceChildren();
+
+        if (ignoredEntries.length === 0) {
+            const emptyMessage = document.createElement('p');
+            emptyMessage.className = 'td-ignore-manager-empty';
+            emptyMessage.textContent = 'No users currently ignored.';
+            list.appendChild(emptyMessage);
+        } else {
+            ignoredEntries.forEach(function ([userId, user]) {
+                const row = document.createElement('div');
+                row.className = 'td-ignore-manager-row';
+
+                const username = document.createElement('span');
+                username.className = 'td-ignore-manager-username';
+                username.textContent = user.username;
+
+                const unignoreButton = document.createElement('button');
+                unignoreButton.type = 'button';
+                unignoreButton.textContent = 'Unignore';
+
+                unignoreButton.addEventListener('click', function () {
+                    unignoreUser(userId);
+                });
+
+                row.appendChild(username);
+                row.appendChild(unignoreButton);
+                list.appendChild(row);
+            });
+        }
+
+        const unignoreAllButton = document.querySelector(
+            '.td-ignore-manager-unignore-all'
+        );
+
+        if (unignoreAllButton) {
+            unignoreAllButton.disabled = ignoredEntries.length === 0;
+        }
+    }
+
+    function openIgnoreManager() {
+        const overlay = document.querySelector('.td-ignore-manager-overlay');
+
+        if (!overlay) {
+            return;
+        }
+
+        refreshIgnoreManager();
+        overlay.hidden = false;
+    }
+
+    function closeIgnoreManager() {
+        const overlay = document.querySelector('.td-ignore-manager-overlay');
+
+        if (overlay) {
+            overlay.hidden = true;
+        }
+    }
+
+    function unignoreAllUsers() {
+        const ignoredUsers = getIgnoredUsers();
+
+        if (Object.keys(ignoredUsers).length === 0) {
+            return;
+        }
+
+        if (!window.confirm('Unignore all users?')) {
+            return;
+        }
+
+        saveIgnoredUsers({});
+        refreshPosts();
+        refreshIgnoreManager();
+    }
+
+    function addIgnoreManager() {
+        let managerButton = document.querySelector(
+            '.td-ignore-manager-button'
+        );
+
+        if (!managerButton) {
+            managerButton = document.createElement('button');
+            managerButton.type = 'button';
+            managerButton.className = 'td-ignore-manager-button';
+            managerButton.addEventListener('click', openIgnoreManager);
+            document.body.appendChild(managerButton);
+        }
+
+        if (!document.querySelector('.td-ignore-manager-overlay')) {
+            const overlay = document.createElement('div');
+            overlay.className = 'td-ignore-manager-overlay';
+            overlay.hidden = true;
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+            overlay.setAttribute('aria-labelledby', 'td-ignore-manager-title');
+
+            const panel = document.createElement('div');
+            panel.className = 'td-ignore-manager-panel';
+
+            const header = document.createElement('div');
+            header.className = 'td-ignore-manager-header';
+
+            const title = document.createElement('h2');
+            title.id = 'td-ignore-manager-title';
+            title.textContent = 'TD Ignore';
+
+            const closeButton = document.createElement('button');
+            closeButton.type = 'button';
+            closeButton.textContent = 'Close';
+            closeButton.addEventListener('click', closeIgnoreManager);
+
+            const list = document.createElement('div');
+            list.className = 'td-ignore-manager-list';
+
+            const actions = document.createElement('div');
+            actions.className = 'td-ignore-manager-actions';
+
+            const unignoreAllButton = document.createElement('button');
+            unignoreAllButton.type = 'button';
+            unignoreAllButton.className = 'td-ignore-manager-unignore-all';
+            unignoreAllButton.textContent = 'Unignore All';
+            unignoreAllButton.addEventListener('click', unignoreAllUsers);
+
+            header.appendChild(title);
+            header.appendChild(closeButton);
+            actions.appendChild(unignoreAllButton);
+            panel.appendChild(header);
+            panel.appendChild(list);
+            panel.appendChild(actions);
+            overlay.appendChild(panel);
+            document.body.appendChild(overlay);
+        }
+
+        refreshIgnoreManager();
+    }
+
+    // -------------------------------------------------------------------------
     // Styling
     // -------------------------------------------------------------------------
 
     function addStyles() {
+        if (document.querySelector('.td-ignore-styles')) {
+            return;
+        }
+
         const style = document.createElement('style');
+        style.className = 'td-ignore-styles';
 
         style.textContent = `
             .td-ignore-button {
@@ -270,6 +433,114 @@
                 background: #555;
                 color: #fff;
             }
+
+            .td-ignore-manager-button {
+                position: fixed;
+                right: 12px;
+                bottom: 12px;
+                z-index: 2147483645;
+                padding: 6px 10px;
+                border: 1px solid #777;
+                border-radius: 4px;
+                background: #333;
+                color: #ffc107;
+                font-size: 12px;
+                font-weight: bold;
+                cursor: pointer;
+            }
+
+            .td-ignore-manager-button:hover {
+                background: #555;
+            }
+
+            .td-ignore-manager-overlay {
+                position: fixed;
+                inset: 0;
+                z-index: 2147483646;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 16px;
+                box-sizing: border-box;
+                background: rgba(0, 0, 0, 0.55);
+            }
+
+            .td-ignore-manager-overlay[hidden] {
+                display: none;
+            }
+
+            .td-ignore-manager-panel {
+                width: 360px;
+                max-width: calc(100vw - 32px);
+                max-height: calc(100vh - 32px);
+                overflow: auto;
+                padding: 16px;
+                box-sizing: border-box;
+                border: 1px solid #777;
+                border-radius: 6px;
+                background: #222;
+                color: #eee;
+                box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+            }
+
+            .td-ignore-manager-header,
+            .td-ignore-manager-row,
+            .td-ignore-manager-actions {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .td-ignore-manager-header {
+                justify-content: space-between;
+                margin-bottom: 12px;
+            }
+
+            .td-ignore-manager-header h2 {
+                margin: 0;
+                color: #ffc107;
+                font-size: 18px;
+            }
+
+            .td-ignore-manager-row {
+                justify-content: space-between;
+                padding: 8px 0;
+                border-top: 1px solid #444;
+            }
+
+            .td-ignore-manager-username {
+                overflow-wrap: anywhere;
+            }
+
+            .td-ignore-manager-empty {
+                margin: 16px 0;
+                color: #ccc;
+            }
+
+            .td-ignore-manager-actions {
+                justify-content: flex-end;
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px solid #444;
+            }
+
+            .td-ignore-manager-panel button {
+                padding: 4px 9px;
+                border: 1px solid #777;
+                border-radius: 4px;
+                background: #333;
+                color: #eee;
+                cursor: pointer;
+            }
+
+            .td-ignore-manager-panel button:hover:not(:disabled) {
+                background: #555;
+            }
+
+            .td-ignore-manager-panel button:disabled {
+                opacity: 0.5;
+                cursor: default;
+            }
         `;
 
         document.head.appendChild(style);
@@ -280,6 +551,7 @@
     // -------------------------------------------------------------------------
 
     addStyles();
+    addIgnoreManager();
     refreshPosts();
 
 })();
